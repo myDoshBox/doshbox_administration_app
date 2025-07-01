@@ -1,16 +1,17 @@
-import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import AdminDashboard from "./pages/Dashboard/AdminDashBoard";
-import AddMediator from "./pages/AddUsersFormPage.jsx/AddMediator";
-import Navbar from "./componet/NavBar";
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import AdminDashboard from './pages/Dashboard/AdminDashBoard';
+import AddMediator from './pages/AddUsersFormPage/AddMediator';
+import GetAllMediators from './pages/FetchAllInfo.jsx/FetchAllMediators';
+import Navbar from './component/NavBar';
 
 function App() {
   return (
     <Router>
-      <Navbar /> {/* ✅ This makes it visible on all pages */}
+      <Navbar />
       <Routes>
         <Route path="/" element={<AdminDashboard />} />
         <Route path="/add-mediators" element={<AddMediator />} />
+        <Route path="/get-all-mediators" element={<GetAllMediators />} />
       </Routes>
     </Router>
   );
