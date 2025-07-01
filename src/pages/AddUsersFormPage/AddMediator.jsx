@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { addMediator } from '../../Redux/features/mediator/mediatorSlice';
+import { addMediator } from '../../Redux/Slice/MediatorSlice/mediatorSlice';
 import { useNavigate } from 'react-router-dom';
 
 function AddMediator() {

@@ -1,5 +1,5 @@
 import { configureStore } from '@reduxjs/toolkit';
-import mediatorReducer from './features/mediator/mediatorSlice';
+import mediatorReducer from './Slice/MediatorSlice/mediatorSlice';
 
 export const store = configureStore({
   reducer: {
