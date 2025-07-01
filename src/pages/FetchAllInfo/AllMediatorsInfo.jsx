@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchAllMediators } from '../../Redux/Slice/MediatorSlice/mediatorSlice';
 import dayjs from 'dayjs';
@@ -13,7 +13,12 @@ const MediatorRow = ({ mediator, index, indexOfFirst }) => (
     <td>{mediator.mediator_phone_number || '-'}</td>
     <td>
       {mediator.created_at && dayjs(mediator.created_at).isValid()
-        ? dayjs(mediator.created_at).format('YYYY-MM-DD HH:mm')
+        ? dayjs(mediator.created_at).format('YYYY-MM-DD')
+        : '-'}
+    </td>
+    <td>
+      {mediator.created_at && dayjs(mediator.created_at).isValid()
+        ? dayjs(mediator.created_at).format('HH:mm')
         : '-'}
     </td>
   </tr>
@@ -93,13 +98,14 @@ function GetAllMediators() {
               <th>Full Name</th>
               <th>Email</th>
               <th>Phone Number</th>
-              <th>Created At</th>
+              <th>Date Added</th>
+              <th>Time Added</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={5} className="text-center py-4">
+                <td colSpan={6} className="text-center py-4">
                   <div className="spinner-border text-secondary" role="status">
                     <span className="visually-hidden">Loading...</span>
                   </div>
@@ -107,7 +113,7 @@ function GetAllMediators() {
               </tr>
             ) : error ? (
               <tr>
-                <td colSpan={5} className="text-center text-danger py-4">
+                <td colSpan={6} className="text-center text-danger py-4">
                   <div className="alert alert-danger d-inline-flex align-items-center" role="alert">
                     <span>{error}</span>
                     <button onClick={handleRetry} className="btn btn-sm btn-outline-success ms-3">
@@ -127,7 +133,7 @@ function GetAllMediators() {
               ))
             ) : (
               <tr>
-                <td colSpan={5} className="text-center text-muted py-4">
+                <td colSpan={6} className="text-center text-muted py-4">
                   <div>
                     <i className="bi bi-person-dash" style={{ fontSize: '1.5rem' }}></i>
                     <p className="mt-2 mb-0">No mediators found yet.</p>
