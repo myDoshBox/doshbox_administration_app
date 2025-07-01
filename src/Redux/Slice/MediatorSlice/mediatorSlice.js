@@ -1,65 +1,79 @@
+// src/Redux/Slice/MediatorSlice/mediatorSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
-// 📦 Thunk to fetch all mediators from the backend API
-export const fetchAllMediators = createAsyncThunk(
-  'mediator/fetchAll',
-  async (_, thunkAPI) => {
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+// POST: Add new mediator
+export const addMediator = createAsyncThunk(
+  'mediator/addMediator',
+  async (formData, { rejectWithValue }) => {
     try {
-      const BASE_URL = import.meta.env.VITE_API_BASE_URL;
-      const ENDPOINT = import.meta.env.VITE_FETCH_ALL_MEDIATORS;
-      const response = await fetch(`${BASE_URL}${ENDPOINT}`);
+      const res = await fetch(`${BASE_URL}/onboarding_mediators`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch mediators');
-      }
-
-      const data = await response.json();
+      if (!res.ok) throw new Error('Failed to add mediator');
+      const data = await res.json();
       return data;
     } catch (error) {
-      console.error('fetchAllMediators error:', error.message);
-      return thunkAPI.rejectWithValue(error.message);
+      return rejectWithValue(error.message || 'Unknown error');
     }
   }
 );
 
-// 🔁 Initial state
-const initialState = {
-  list: [],
-  loading: false,
-  error: null,
-};
+// GET: Fetch all mediators
+export const fetchAllMediators = createAsyncThunk(
+  'mediator/fetchAllMediators',
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await fetch(`${BASE_URL}/fetch_all_mediators`);
+      if (!res.ok) throw new Error('Failed to fetch mediators');
+      const data = await res.json();
+      return data;
+    } catch (error) {
+      return rejectWithValue(error.message || 'Unknown error');
+    }
+  }
+);
 
-// 🧠 Create slice
 const mediatorSlice = createSlice({
   name: 'mediator',
-  initialState,
-  reducers: {
-    // Add a new mediator to the top of the list
-    addMediator: (state, action) => {
-      const newMediator = {
-        ...action.payload,
-        timestamp: new Date().toISOString(), // use backend timestamp if available
-      };
-      state.list.unshift(newMediator); // 👈 Add to top
-    },
+  initialState: {
+    list: [],
+    loading: false,
+    error: null,
   },
+  reducers: {},
   extraReducers: (builder) => {
     builder
+      .addCase(addMediator.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(addMediator.fulfilled, (state, action) => {
+        state.loading = false;
+        state.list.unshift(action.payload); // Add to top
+      })
+      .addCase(addMediator.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
       .addCase(fetchAllMediators.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(fetchAllMediators.fulfilled, (state, action) => {
         state.loading = false;
-        state.list = action.payload;
+        state.list = action.payload.reverse();
       })
       .addCase(fetchAllMediators.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload || 'Something went wrong';
+        state.error = action.payload;
       });
   },
 });
 
-// 🧩 Export actions and reducer
-export const { addMediator } = mediatorSlice.actions;
 export default mediatorSlice.reducer;
