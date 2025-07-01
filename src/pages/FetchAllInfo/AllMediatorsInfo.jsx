@@ -12,13 +12,13 @@ const MediatorRow = ({ mediator, index, indexOfFirst }) => (
     <td>{mediator.mediator_email || '-'}</td>
     <td>{mediator.mediator_phone_number || '-'}</td>
     <td>
-      {mediator.created_at && dayjs(mediator.created_at).isValid()
-        ? dayjs(mediator.created_at).format('YYYY-MM-DD')
+      {mediator.createdAt && dayjs(mediator.createdAt).isValid()
+        ? dayjs(mediator.createdAt).format('YYYY-MM-DD')
         : '-'}
     </td>
     <td>
-      {mediator.created_at && dayjs(mediator.created_at).isValid()
-        ? dayjs(mediator.created_at).format('HH:mm')
+      {mediator.createdAt && dayjs(mediator.createdAt).isValid()
+        ? dayjs(mediator.createdAt).format('HH:mm')
         : '-'}
     </td>
   </tr>
@@ -50,9 +50,9 @@ function GetAllMediators() {
 
   const sortedMediators = useMemo(() => {
     return [...mediators].sort((a, b) => {
-      const dateA = new Date(a.created_at);
-      const dateB = new Date(b.created_at);
-      return isNaN(dateB.getTime()) || isNaN(dateA.getTime()) ? 0 : dateB.getTime() - dateA.getTime();
+      const dateA = new Date(a.createdAt); // ✅ must use 'createdAt'
+      const dateB = new Date(b.createdAt);
+      return dateB - dateA; // newest on top
     });
   }, [mediators]);
 
