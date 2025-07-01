@@ -4,7 +4,15 @@ function Navbar() {
   return (
     <nav className="navbar navbar-expand-lg bg-white p-3">
       <div className="container-fluid">
-        <a className="navbar-brand fw-bold text-black" href="/">Navbar</a>
+           {/* Logo replaces the text */}
+           <a className="navbar-brand fw-bold text-black" href="/">
+          <img
+            src="/logo.png"
+            alt="Logo"
+            height="40"
+            style={{ objectFit: "contain" }}
+          />
+        </a>
         <button
           className="navbar-toggler"
           type="button"
