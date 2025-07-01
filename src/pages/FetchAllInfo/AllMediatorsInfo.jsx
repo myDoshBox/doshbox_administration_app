@@ -33,12 +33,8 @@ function GetAllMediators() {
 
   useEffect(() => {
     dispatch(fetchAllMediators());
-    const interval = setInterval(() => {
-      dispatch(fetchAllMediators());
-    }, 30000); // auto refresh every 30s
-
-    return () => clearInterval(interval);
   }, [dispatch]);
+  
 
   const totalPages = Math.ceil(mediators.length / rowsPerPage);
 
