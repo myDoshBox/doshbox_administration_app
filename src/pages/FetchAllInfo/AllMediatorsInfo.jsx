@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchAllMediators } from '../../Redux/Slice/MediatorSlice/mediatorSlice';
 import dayjs from 'dayjs';
+import { filterItems } from '../../utils/searchFilter';
 
 const MediatorRow = ({ mediator, index, indexOfFirst }) => (
   <tr>
@@ -28,13 +29,13 @@ function GetAllMediators() {
   const dispatch = useDispatch();
   const { list: mediators, loading, error } = useSelector((state) => state.mediator);
 
+  const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(5);
 
   useEffect(() => {
     dispatch(fetchAllMediators());
   }, [dispatch]);
-  
 
   const totalPages = Math.ceil(mediators.length / rowsPerPage);
 
@@ -46,15 +47,29 @@ function GetAllMediators() {
 
   const sortedMediators = useMemo(() => {
     return [...mediators].sort((a, b) => {
-      const dateA = new Date(a.createdAt); // ✅ must use 'createdAt'
+      const dateA = new Date(a.createdAt);
       const dateB = new Date(b.createdAt);
-      return dateB - dateA; // newest on top
+      return dateB - dateA;
     });
   }, [mediators]);
 
+  const filteredMediators = useMemo(() => {
+    return filterItems(sortedMediators, searchQuery, [
+      'fullName',
+      'mediator_email',
+      'mediator_phone_number',
+      'createdAt'
+    ], {
+      fullName: (item) => `${item.first_name || ''} ${item.middle_name || ''} ${item.last_name || ''}`.trim(),
+      createdAt: (item) => dayjs(item.createdAt).isValid()
+        ? dayjs(item.createdAt).format('YYYY-MM-DD HH:mm')
+        : '',
+    });
+  }, [sortedMediators, searchQuery]);
+
   const indexOfLast = currentPage * rowsPerPage;
   const indexOfFirst = indexOfLast - rowsPerPage;
-  const currentMediators = sortedMediators.slice(indexOfFirst, indexOfLast);
+  const currentMediators = filteredMediators.slice(indexOfFirst, indexOfLast);
 
   const handlePageChange = (page) => {
     if (page >= 1 && page <= totalPages && !loading) {
@@ -68,22 +83,34 @@ function GetAllMediators() {
     <div className="container py-5">
       <h2 className="mb-4 text-center fw-bold">All Mediators</h2>
 
-      <div className="mb-3 d-flex align-items-center">
-        <label htmlFor="rowsPerPage" className="form-label me-2 mb-0">Rows per page:</label>
-        <select
-          id="rowsPerPage"
-          className="form-select w-auto"
-          value={rowsPerPage}
-          onChange={(e) => {
-            setRowsPerPage(Number(e.target.value));
-            setCurrentPage(1);
-          }}
-          disabled={loading}
-        >
-          <option value={5}>5</option>
-          <option value={10}>10</option>
-          <option value={25}>25</option>
-        </select>
+      <div className="row">
+        <div className="mb-3 d-flex align-items-center col">
+          <label htmlFor="rowsPerPage" className="form-label me-2 mb-0">Rows per page:</label>
+          <select
+            id="rowsPerPage"
+            className="form-select w-auto"
+            value={rowsPerPage}
+            onChange={(e) => {
+              setRowsPerPage(Number(e.target.value));
+              setCurrentPage(1);
+            }}
+            disabled={loading}
+          >
+            <option value={5}>5</option>
+            <option value={10}>10</option>
+            <option value={25}>25</option>
+          </select>
+        </div>
+
+        <div className="d-flex justify-content-end mb-3 col-8">
+          <input
+            type="text"
+            placeholder="Search by name, email, phone, date..."
+            className="form-control w-50"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
       </div>
 
       <div className="table-responsive">
@@ -121,7 +148,7 @@ function GetAllMediators() {
             ) : currentMediators.length > 0 ? (
               currentMediators.map((mediator, index) => (
                 <MediatorRow
-                  key={mediator.mediator_email || index}
+                  key={mediator._id || index}
                   mediator={mediator}
                   index={index}
                   indexOfFirst={indexOfFirst}
@@ -141,7 +168,6 @@ function GetAllMediators() {
         </table>
       </div>
 
-      {/* Pagination */}
       {totalPages > 1 && (
         <nav className="d-flex justify-content-center mt-4" aria-label="Pagination">
           <ul className="pagination">

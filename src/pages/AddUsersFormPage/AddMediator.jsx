@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { addMediator } from '../../Redux/Slice/MediatorSlice/mediatorSlice';
 import { useNavigate } from 'react-router-dom';
+import toast, { Toaster } from 'react-hot-toast';
 
 function AddMediator() {
   const dispatch = useDispatch();
@@ -15,42 +16,38 @@ function AddMediator() {
     mediator_phone_number: '',
     password: '',
   });
-
-  const [popupMessage, setPopupMessage] = useState('');
-
+ 
+  
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    try {
+      const resultAction = await dispatch(addMediator(formData));
+      const payload = resultAction.payload;
 
-    const result = await dispatch(addMediator(formData));
-
-    if (addMediator.fulfilled.match(result)) {
-      // Check for custom backend 204 status behavior
-      if (result.payload?.status === false && result.payload?.message) {
-        setPopupMessage(result.payload.message);
-        return;
+      if (resultAction.meta.requestStatus === 'fulfilled') {
+        toast.success('User added successfully');
+        setTimeout(() => navigate(''), 1500);
+      } else {
+        const errorMessage = typeof payload === 'object' && payload?.message
+          ? payload.message
+          : 'Failed to add mediator';
+      
+        toast.error(errorMessage);
       }
-
-      navigate('/get-all-mediators');
-    } else if (result.payload) {
-      setPopupMessage(result.payload); // generic error handling
+    } catch (error) {
+      toast.error(error.message || 'Something went wrong');
     }
   };
 
   return (
     <div className="container py-5 d-flex justify-content-center">
+      <Toaster position="top-right" />
       <div style={{ maxWidth: '500px', width: '100%' }}>
         <h2 className="mb-4 text-center fw-bold">Add New Mediator</h2>
-
-        {popupMessage && (
-          <div className="alert alert-warning text-center fw-semibold">
-            {popupMessage}
-          </div>
-        )}
-
         <form onSubmit={handleSubmit} className="p-4 shadow rounded bg-light">
           <div className="mb-3">
             <label htmlFor="first_name" className="form-label">First Name</label>

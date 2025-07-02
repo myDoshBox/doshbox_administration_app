@@ -13,20 +13,31 @@ export const addMediator = createAsyncThunk(
         body: JSON.stringify(formData),
       });
 
-      const text = await response.text();
-      const data = text ? JSON.parse(text) : {};
-
-      if (!response.ok || response.status === 204) {
-        const errorMessage = data.message || 'Failed to add mediator';
-        return rejectWithValue(errorMessage);
+      // ✅ Check for 204 No Content
+      if (response.status === 204) {
+        return rejectWithValue({
+          status: false,
+          message: 'Mediator already exist, please proceed to login',
+        });
       }
 
+      // ✅ Other errors
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || `Failed to add mediator: ${response.status}`);
+      }
+
+      const data = await response.json();
       return data;
     } catch (error) {
-      return rejectWithValue(error.message || 'Unknown error');
+      return rejectWithValue({
+        status: false,
+        message: error.message || 'Unknown error',
+      });
     }
   }
 );
+
 
 
 // Fetch All Mediators Thunk
@@ -60,6 +71,29 @@ export const fetchAllMediators = createAsyncThunk(
     }
   }
 );
+
+// delete Mediators
+export const deleteMediator = createAsyncThunk(
+  'mediator/deleteMediator',
+  async (id, { rejectWithValue }) => {
+    try {
+      const response = await fetch(`https://mydoshbox-be.onrender.com/mediators/delete-mediator/${id}`, {
+        method: 'DELETE',
+      });
+
+      const text = await response.text();
+
+      if (!response.ok) {
+        throw new Error(text || 'Failed to delete mediator');
+      }
+
+      return id;
+    } catch (error) {
+      return rejectWithValue(error.message || 'Unknown error');
+    }
+  }
+);
+
 
 // Mediator Slice
 const mediatorSlice = createSlice({
@@ -100,7 +134,15 @@ const mediatorSlice = createSlice({
       .addCase(fetchAllMediators.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || 'Failed to fetch mediators';
-      });
+      })
+    // Delet Mediators
+    .addCase(deleteMediator.fulfilled, (state, action) => {
+      state.list = state.list.filter((mediator) => mediator._id !== action.payload);
+    })
+    .addCase(deleteMediator.rejected, (state, action) => {
+      state.error = action.payload;
+    });
+    
   },
 });
 
