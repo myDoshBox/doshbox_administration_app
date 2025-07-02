@@ -13,21 +13,21 @@ export const addMediator = createAsyncThunk(
         body: JSON.stringify(formData),
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Add Mediator Error:', errorText);
-        throw new Error(errorText || 'Failed to add mediator');
+      const text = await response.text();
+      const data = text ? JSON.parse(text) : {};
+
+      if (!response.ok || response.status === 204) {
+        const errorMessage = data.message || 'Failed to add mediator';
+        return rejectWithValue(errorMessage);
       }
 
-      const data = await response.json();
-      console.log('Add Mediator Success:', data);
       return data;
     } catch (error) {
-      console.error('Add Mediator Catch Error:', error.message);
       return rejectWithValue(error.message || 'Unknown error');
     }
   }
 );
+
 
 // Fetch All Mediators Thunk
 export const fetchAllMediators = createAsyncThunk(
