@@ -1,55 +1,55 @@
-// utils/searchFilter.js
-
-
-import dayjs from 'dayjs';
+// utils/searchFilter.js (no external packages)
 
 /**
- * Generic search filter for any dataset
- * @param {Array} items - The data list
- * @param {string} query - The search text
- * @param {Array<string>} fields - The fields to search
- * @param {Object} options - Custom transformation rules per field
- * @returns {Array} Filtered list
+ * Generic React-based search filter for any dataset
+ * @param {Array} items - The array of data objects
+ * @param {string} query - Search query string
+ * @param {Array<string>} fields - Keys to match in each object
+ * @param {Object} options - Optional transform logic per field
+ * @returns {Array} - Filtered array
  */
 export function filterItems(items, query, fields = [], options = {}) {
-  const lowerQuery = query.toLowerCase();
+  if (!query || !Array.isArray(items)) return items;
+
+  const lowerQuery = query.toLowerCase().trim();
 
   return items.filter(item => {
-    const searchableValues = fields.map(field => {
-      if (options[field]) {
-        return options[field](item)?.toLowerCase?.() || '';
+    return fields.some(field => {
+      let value = '';
+
+      // Use custom transformation if provided
+      if (typeof options[field] === 'function') {
+        value = options[field](item);
+      } else {
+        // Support nested fields like 'user.name'
+        const keys = field.split('.');
+        value = keys.reduce((acc, key) => acc?.[key], item);
       }
 
-      // Auto handle date objects
-      const value = item[field];
-      if (field.toLowerCase().includes('date') || field.toLowerCase().includes('time')) {
-        return dayjs(value).isValid() ? dayjs(value).format('YYYY-MM-DD HH:mm').toLowerCase() : '';
-      }
-
-      return String(value || '').toLowerCase();
+      return String(value || '').toLowerCase().includes(lowerQuery);
     });
-
-    return searchableValues.some(val => val.includes(lowerQuery));
   });
 }
 
 
+// USAGE EXAMPLE for Mediators (in GetAllMediators.jsx):
 
-
-
-
-
-
-// export function filterItems(items, query, fields) {
-//     if (!query) return items;
-  
-//     const lowerQuery = query.toLowerCase();
-  
-//     return items.filter((item) =>
-//       fields.some((field) => {
-//         const value = item[field];
-//         return value && value.toString().toLowerCase().includes(lowerQuery);
-//       })
-//     );
-//   }
-  
+/*
+const filteredMediators = useMemo(() => {
+  return filterItems(sortedMediators, searchQuery, [
+    'first_name',
+    'middle_name',
+    'last_name',
+    'mediator_email',
+    'mediator_phone_number',
+    'createdAt',
+  ], {
+    // Join names for full-name support
+    fullName: (item) => `${item.first_name || ''} ${item.middle_name || ''} ${item.last_name || ''}`,
+    createdAt: (item) => {
+      const date = new Date(item.createdAt);
+      return isNaN(date.getTime()) ? '' : `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2,'0')}-${date.getDate().toString().padStart(2,'0')} ${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')}`;
+    }
+  });
+}, [sortedMediators, searchQuery]);
+*/

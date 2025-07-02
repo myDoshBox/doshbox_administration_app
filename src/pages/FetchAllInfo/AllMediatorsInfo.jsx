@@ -1,29 +1,26 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchAllMediators } from '../../Redux/Slice/MediatorSlice/mediatorSlice';
-import dayjs from 'dayjs';
 import { filterItems } from '../../utils/searchFilter';
 
-const MediatorRow = ({ mediator, index, indexOfFirst }) => (
-  <tr>
-    <td className="text-center">{indexOfFirst + index + 1}</td>
-    <td>
-      {`${mediator.first_name || ''} ${mediator.middle_name || ''} ${mediator.last_name || ''}`.trim() || '-'}
-    </td>
-    <td>{mediator.mediator_email || '-'}</td>
-    <td>{mediator.mediator_phone_number || '-'}</td>
-    <td>
-      {mediator.createdAt && dayjs(mediator.createdAt).isValid()
-        ? dayjs(mediator.createdAt).format('YYYY-MM-DD')
-        : '-'}
-    </td>
-    <td>
-      {mediator.createdAt && dayjs(mediator.createdAt).isValid()
-        ? dayjs(mediator.createdAt).format('HH:mm')
-        : '-'}
-    </td>
-  </tr>
-);
+const MediatorRow = ({ mediator, index, indexOfFirst }) => {
+  const createdAtDate = new Date(mediator.createdAt);
+  const formattedDate = isNaN(createdAtDate.getTime()) ? '-' : `${createdAtDate.getFullYear()}-${(createdAtDate.getMonth()+1).toString().padStart(2,'0')}-${createdAtDate.getDate().toString().padStart(2,'0')}`;
+  const formattedTime = isNaN(createdAtDate.getTime()) ? '-' : `${createdAtDate.getHours().toString().padStart(2,'0')}:${createdAtDate.getMinutes().toString().padStart(2,'0')}`;
+
+  return (
+    <tr>
+      <td className="text-center">{indexOfFirst + index + 1}</td>
+      <td>
+        {`${mediator.first_name || ''} ${mediator.middle_name || ''} ${mediator.last_name || ''}`.trim() || '-'}
+      </td>
+      <td>{mediator.mediator_email || '-'}</td>
+      <td>{mediator.mediator_phone_number || '-'}</td>
+      <td>{formattedDate}</td>
+      <td>{formattedTime}</td>
+    </tr>
+  );
+};
 
 function GetAllMediators() {
   const dispatch = useDispatch();
@@ -46,24 +43,23 @@ function GetAllMediators() {
   }, [totalPages, currentPage]);
 
   const sortedMediators = useMemo(() => {
-    return [...mediators].sort((a, b) => {
-      const dateA = new Date(a.createdAt);
-      const dateB = new Date(b.createdAt);
-      return dateB - dateA;
-    });
+    return [...mediators].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   }, [mediators]);
 
   const filteredMediators = useMemo(() => {
     return filterItems(sortedMediators, searchQuery, [
-      'fullName',
+      'first_name',
+      'middle_name',
+      'last_name',
       'mediator_email',
       'mediator_phone_number',
       'createdAt'
     ], {
       fullName: (item) => `${item.first_name || ''} ${item.middle_name || ''} ${item.last_name || ''}`.trim(),
-      createdAt: (item) => dayjs(item.createdAt).isValid()
-        ? dayjs(item.createdAt).format('YYYY-MM-DD HH:mm')
-        : '',
+      createdAt: (item) => {
+        const date = new Date(item.createdAt);
+        return isNaN(date.getTime()) ? '' : `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2,'0')}-${date.getDate().toString().padStart(2,'0')} ${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')}`;
+      }
     });
   }, [sortedMediators, searchQuery]);
 
