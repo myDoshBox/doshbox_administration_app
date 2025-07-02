@@ -96,9 +96,9 @@ function GetAllMediators() {
             }}
             disabled={loading}
           >
-            <option value={5}>5</option>
             <option value={10}>10</option>
             <option value={25}>25</option>
+            <option value={35}>35</option>
           </select>
         </div>
 
