@@ -30,7 +30,7 @@ function AddMediator() {
 
       if (resultAction.meta.requestStatus === 'fulfilled') {
         toast.success('User added successfully');
-        setTimeout(() => navigate(''), 1500);
+        setTimeout(() => navigate('/get-all-mediators'), 1500);
       } else {
         const errorMessage = typeof payload === 'object' && payload?.message
           ? payload.message
