@@ -5,8 +5,15 @@ import { filterItems } from '../../utils/searchFilter';
 
 const MediatorRow = ({ mediator, index, indexOfFirst }) => {
   const createdAtDate = new Date(mediator.createdAt);
-  const formattedDate = isNaN(createdAtDate.getTime()) ? '-' : `${createdAtDate.getFullYear()}-${(createdAtDate.getMonth()+1).toString().padStart(2,'0')}-${createdAtDate.getDate().toString().padStart(2,'0')}`;
-  const formattedTime = isNaN(createdAtDate.getTime()) ? '-' : `${createdAtDate.getHours().toString().padStart(2,'0')}:${createdAtDate.getMinutes().toString().padStart(2,'0')}`;
+
+  const formattedDate = isNaN(createdAtDate.getTime())
+    ? '-'
+    : `${createdAtDate.getFullYear()}-${(createdAtDate.getMonth() + 1).toString().padStart(2, '0')}-${createdAtDate.getDate().toString().padStart(2, '0')}`;
+
+  // Convert to 12-hour format with AM/PM
+  const formattedTime = isNaN(createdAtDate.getTime())
+    ? '-'
+    : createdAtDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
 
   return (
     <tr>
@@ -17,7 +24,7 @@ const MediatorRow = ({ mediator, index, indexOfFirst }) => {
       <td>{mediator.mediator_email || '-'}</td>
       <td>{mediator.mediator_phone_number || '-'}</td>
       <td>{formattedDate}</td>
-      <td>{formattedTime}</td>
+      <td>{formattedTime}</td> {/* This will now display 12-hour format */}
     </tr>
   );
 };
@@ -28,7 +35,7 @@ function GetAllMediators() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   useEffect(() => {
     dispatch(fetchAllMediators());
@@ -58,7 +65,8 @@ function GetAllMediators() {
       fullName: (item) => `${item.first_name || ''} ${item.middle_name || ''} ${item.last_name || ''}`.trim(),
       createdAt: (item) => {
         const date = new Date(item.createdAt);
-        return isNaN(date.getTime()) ? '' : `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2,'0')}-${date.getDate().toString().padStart(2,'0')} ${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')}`;
+        // Update this transformation to include the 12-hour time format for search
+        return isNaN(date.getTime()) ? '' : `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ${date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}`;
       }
     });
   }, [sortedMediators, searchQuery]);
@@ -98,7 +106,7 @@ function GetAllMediators() {
           </select>
         </div>
 
-        <div className="d-flex justify-content-end mb-3 col-8">
+        <div className="d-flex justify-content-end mb-3 col-5">
           <input
             type="text"
             placeholder="Search by name, email, phone, date..."
