@@ -111,7 +111,7 @@ function GetAllMediators() {
 
       <div className="table-responsive">
         <table className="table table-bordered table-hover table-striped align-middle">
-          <thead className="table-dark text-center">
+          <thead className="table-dark text-start">
             <tr>
               <th>#</th>
               <th>Full Name</th>
