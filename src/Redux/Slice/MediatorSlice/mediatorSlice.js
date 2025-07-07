@@ -95,6 +95,8 @@ export const deleteMediator = createAsyncThunk(
 );
 
 
+
+
 // Mediator Slice
 const mediatorSlice = createSlice({
   name: 'mediator',
@@ -135,14 +137,14 @@ const mediatorSlice = createSlice({
         state.loading = false;
         state.error = action.payload || 'Failed to fetch mediators';
       })
-    // Delet Mediators
-    .addCase(deleteMediator.fulfilled, (state, action) => {
-      state.list = state.list.filter((mediator) => mediator._id !== action.payload);
-    })
-    .addCase(deleteMediator.rejected, (state, action) => {
-      state.error = action.payload;
-    });
-    
+      // Delet Mediators
+      .addCase(deleteMediator.fulfilled, (state, action) => {
+        state.list = state.list.filter((mediator) => mediator._id !== action.payload);
+      })
+      .addCase(deleteMediator.rejected, (state, action) => {
+        state.error = action.payload;
+      });
+  
   },
 });
 

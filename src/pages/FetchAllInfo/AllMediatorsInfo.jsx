@@ -2,15 +2,17 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchAllMediators } from '../../Redux/Slice/MediatorSlice/mediatorSlice';
 import { filterItems } from '../../utils/searchFilter';
+import { fetchMediatorDisputes } from '../../Redux/Slice/MediatorSlice/mediatorDisputeSlice';
 
-const MediatorRow = ({ mediator, index, indexOfFirst }) => {
+const MediatorRow = ({ mediator, index, indexOfFirst, disputeCount }) => {
   const createdAtDate = new Date(mediator.createdAt);
 
   const formattedDate = isNaN(createdAtDate.getTime())
     ? '-'
-    : `${createdAtDate.getFullYear()}-${(createdAtDate.getMonth() + 1).toString().padStart(2, '0')}-${createdAtDate.getDate().toString().padStart(2, '0')}`;
+    : `${createdAtDate.getFullYear()}-${(createdAtDate.getMonth() + 1)
+        .toString()
+        .padStart(2, '0')}-${createdAtDate.getDate().toString().padStart(2, '0')}`;
 
-  // Convert to 12-hour format with AM/PM
   const formattedTime = isNaN(createdAtDate.getTime())
     ? '-'
     : createdAtDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
@@ -18,13 +20,12 @@ const MediatorRow = ({ mediator, index, indexOfFirst }) => {
   return (
     <tr>
       <td className="text-center">{indexOfFirst + index + 1}</td>
-      <td>
-        {`${mediator.first_name || ''} ${mediator.middle_name || ''} ${mediator.last_name || ''}`.trim() || '-'}
-      </td>
+      <td>{`${mediator.first_name || ''} ${mediator.middle_name || ''} ${mediator.last_name || ''}`.trim()}</td>
       <td>{mediator.mediator_email || '-'}</td>
       <td>{mediator.mediator_phone_number || '-'}</td>
       <td>{formattedDate}</td>
-      <td>{formattedTime}</td> {/* This will now display 12-hour format */}
+      <td>{formattedTime}</td>
+      <td className="text-center">{disputeCount}</td>
     </tr>
   );
 };
@@ -32,6 +33,7 @@ const MediatorRow = ({ mediator, index, indexOfFirst }) => {
 function GetAllMediators() {
   const dispatch = useDispatch();
   const { list: mediators, loading, error } = useSelector((state) => state.mediator);
+  const { disputeCounts } = useSelector((state) => state.mediatorDisputes);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -40,6 +42,15 @@ function GetAllMediators() {
   useEffect(() => {
     dispatch(fetchAllMediators());
   }, [dispatch]);
+
+  useEffect(() => {
+    mediators.forEach((mediator) => {
+      const email = mediator?.mediator_email;
+      if (email && !disputeCounts[email]) {
+        dispatch(fetchMediatorDisputes(email));
+      }
+    });
+  }, [dispatch, mediators, disputeCounts]);
 
   const totalPages = Math.ceil(mediators.length / rowsPerPage);
 
@@ -62,12 +73,23 @@ function GetAllMediators() {
       'mediator_phone_number',
       'createdAt'
     ], {
-      fullName: (item) => `${item.first_name || ''} ${item.middle_name || ''} ${item.last_name || ''}`.trim(),
+      fullName: (item) =>
+        `${item.first_name || ''} ${item.middle_name || ''} ${item.last_name || ''}`.trim(),
       createdAt: (item) => {
         const date = new Date(item.createdAt);
-        // Update this transformation to include the 12-hour time format for search
-        return isNaN(date.getTime()) ? '' : `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ${date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}`;
-      }
+        return isNaN(date.getTime())
+          ? ''
+          : `${date.getFullYear()}-${(date.getMonth() + 1)
+              .toString()
+              .padStart(2, '0')}-${date
+              .getDate()
+              .toString()
+              .padStart(2, '0')} ${date.toLocaleTimeString('en-US', {
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: true,
+            })}`;
+      },
     });
   }, [sortedMediators, searchQuery]);
 
@@ -89,7 +111,9 @@ function GetAllMediators() {
 
       <div className="row">
         <div className="mb-3 d-flex align-items-center col">
-          <label htmlFor="rowsPerPage" className="form-label me-2 mb-0">Rows per page:</label>
+          <label htmlFor="rowsPerPage" className="form-label me-2 mb-0">
+            Rows per page:
+          </label>
           <select
             id="rowsPerPage"
             className="form-select w-auto"
@@ -127,12 +151,13 @@ function GetAllMediators() {
               <th>Phone Number</th>
               <th>Date Added</th>
               <th>Time Added</th>
+              <th>Mediator Disputes</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} className="text-center py-4">
+                <td colSpan={7} className="text-center py-4">
                   <div className="spinner-border text-secondary" role="status">
                     <span className="visually-hidden">Loading...</span>
                   </div>
@@ -140,7 +165,7 @@ function GetAllMediators() {
               </tr>
             ) : error ? (
               <tr>
-                <td colSpan={6} className="text-center text-danger py-4">
+                <td colSpan={7} className="text-center text-danger py-4">
                   <div className="alert alert-danger d-inline-flex align-items-center" role="alert">
                     <span>{error}</span>
                     <button onClick={handleRetry} className="btn btn-sm btn-outline-success ms-3">
@@ -156,11 +181,12 @@ function GetAllMediators() {
                   mediator={mediator}
                   index={index}
                   indexOfFirst={indexOfFirst}
+                  disputeCount={disputeCounts[mediator.mediator_email] || 0}
                 />
               ))
             ) : (
               <tr>
-                <td colSpan={6} className="text-center text-muted py-4">
+                <td colSpan={7} className="text-center text-muted py-4">
                   <div>
                     <i className="bi bi-person-dash" style={{ fontSize: '1.5rem' }}></i>
                     <p className="mt-2 mb-0">No mediators found yet.</p>
@@ -174,17 +200,23 @@ function GetAllMediators() {
 
       {totalPages > 1 && (
         <nav className="d-flex justify-content-center mt-4" aria-label="Pagination">
-          <ul className="pagination">
+          <ul className="pagination ">
             <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
-              <button className="page-link" onClick={() => handlePageChange(currentPage - 1)}>Prev</button>
+              <button className="page-link text-success" onClick={() => handlePageChange(currentPage - 1)}>
+                Prev
+              </button>
             </li>
             {Array.from({ length: totalPages }, (_, i) => (
-              <li key={i} className={`page-item ${currentPage === i + 1 ? 'active' : ''}`}>
-                <button className="page-link" onClick={() => handlePageChange(i + 1)}>{i + 1}</button>
+              <li key={i} className={`page-item  ${currentPage === i + 1 ? 'active' : ''}`}>
+                <button className="page-link" onClick={() => handlePageChange(i + 1)}>
+                  {i + 1}
+                </button>
               </li>
             ))}
             <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
-              <button className="page-link" onClick={() => handlePageChange(currentPage + 1)}>Next</button>
+              <button className="page-link text-success" onClick={() => handlePageChange(currentPage + 1)}>
+                Next
+              </button>
             </li>
           </ul>
         </nav>
