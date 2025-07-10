@@ -5,7 +5,7 @@ export const fetchMediatorDisputes = createAsyncThunk(
   async (email, { rejectWithValue }) => {
     try {
       const response = await fetch(
-        `https://mydoshbox-be.onrender.com/mediators/fetch-all-mediator-dispute/${email}`
+        `https://mydoshbox-be.vercel.app/mediators/fetch-all-mediator-dispute/${email}`
       );
 
       // Explicitly check for 404 or other specific statuses if needed

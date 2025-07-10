@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
-const BASE_URL = 'https://mydoshbox-be.onrender.com/mediators';
+const BASE_URL = 'https://mydoshbox-be.vercel.app/mediators';
 
 // Add Mediator Thunk
 export const addMediator = createAsyncThunk(
@@ -13,7 +13,6 @@ export const addMediator = createAsyncThunk(
         body: JSON.stringify(formData),
       });
 
-      // ✅ Check for 204 No Content
       if (response.status === 204) {
         return rejectWithValue({
           status: false,
@@ -21,22 +20,20 @@ export const addMediator = createAsyncThunk(
         });
       }
 
-      // ✅ Other errors
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || `Failed to add mediator: ${response.status}`);
+        const errorData = await response.json();
+        const errorMessage = errorData.message || `Failed to add mediator: ${response.status}`;
+        return rejectWithValue({ status: false, message: errorMessage });
       }
 
       const data = await response.json();
       return data;
     } catch (error) {
-      return rejectWithValue({
-        status: false,
-        message: error.message || 'Unknown error',
-      });
+      return rejectWithValue({ status: false, message: error.message });
     }
   }
 );
+
 
 
 
