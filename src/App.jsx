@@ -16,6 +16,10 @@ import AdminResetPasswordPage from "./pages/AuthPages/ResetPassword";
 import AdminVerifyEmailPage from "./pages/AuthPages/VerifyEmail";
 import MediatorsList from "./pages/Dashboard/MediatorsList";
 import AddEditMediator from "./pages/Dashboard/AddEditMediator";
+import AdminTransactions from "./pages/Dashboard/transactions/AdminTransactions";
+import AdminTransactionDetail from "./pages/Dashboard/transactions/AdminTransactionDetail";
+import AdminPayouts from "./pages/Dashboard/payout/Adminpayouts";
+import AdminPayoutDetail from "./pages/Dashboard/payout/AdminPayoutDetail";
 import DashboardLayout from "./component/layouts/DashboardLayout";
 import PrivateRoute from "./component/PrivateRoute";
 import HomePage from "./pages/HomePage";
@@ -137,6 +141,38 @@ function App() {
           element={
             <AdminRoute>
               <AddEditMediator />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/transactions/all"
+          element={
+            <AdminRoute>
+              <AdminTransactions />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/transactions/:transactionId"
+          element={
+            <AdminRoute>
+              <AdminTransactionDetail />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/transactions/Payouts"
+          element={
+            <AdminRoute>
+              <AdminPayouts />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/transactions/payouts/:payoutId"
+          element={
+            <AdminRoute>
+              <AdminPayoutDetail />
             </AdminRoute>
           }
         />

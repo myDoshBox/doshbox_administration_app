@@ -13,15 +13,15 @@ import {
   Activity,
   Package,
   RefreshCw,
+  Wallet,
+  XCircle,
 } from "lucide-react";
-import DashboardLayout from "../../component/layouts/DashboardLayout";
 import { useGetDashboardStatsQuery } from "../../Redux/Slice/AdminStatSlice/Adminstatsapislice";
 
 const AdminDashboard = () => {
   const [timeRange, setTimeRange] = useState("year");
   const [lastUpdated, setLastUpdated] = useState(null);
 
-  // Use RTK Query hook to fetch dashboard stats
   const {
     data: stats,
     isLoading,
@@ -30,24 +30,18 @@ const AdminDashboard = () => {
     refetch,
     isFetching,
   } = useGetDashboardStatsQuery(timeRange, {
-    // Polling configuration - refetch every 30 seconds
     pollingInterval: 30000,
-    // Skip if component is not mounted
     refetchOnMountOrArgChange: true,
-    // Refetch on window focus
     refetchOnFocus: true,
-    // Refetch on reconnect
     refetchOnReconnect: true,
   });
 
-  // Update last updated timestamp when data changes
   useEffect(() => {
     if (stats) {
       setLastUpdated(new Date());
     }
   }, [stats]);
 
-  // Format currency
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("en-NG", {
       style: "currency",
@@ -56,18 +50,11 @@ const AdminDashboard = () => {
     }).format(amount || 0);
   };
 
-  // Format time ago
   const formatTimeAgo = (time) => {
     if (!time) return "";
-
-    // Handle both "X hours ago" format and ISO date strings
-    if (typeof time === "string" && time.includes("ago")) {
-      return time;
-    }
-
+    if (typeof time === "string" && time.includes("ago")) return time;
     const date = new Date(time);
     const seconds = Math.floor((new Date() - date) / 1000);
-
     if (seconds < 60) return `${seconds} seconds ago`;
     const minutes = Math.floor(seconds / 60);
     if (minutes < 60) return `${minutes} minute${minutes > 1 ? "s" : ""} ago`;
@@ -77,25 +64,24 @@ const AdminDashboard = () => {
     return `${days} day${days > 1 ? "s" : ""} ago`;
   };
 
-  // Get activity icon and color
-  const getActivityIcon = (type, action) => {
+  const formatHoursAsDays = (hours) => {
+    if (!hours) return "0 hours";
+    if (hours < 24) return `${Math.round(hours)} hours`;
+    const days = Math.round(hours / 24);
+    return `${days} day${days > 1 ? "s" : ""}`;
+  };
+
+  const getActivityIcon = (type) => {
     const iconMap = {
       transaction: { icon: CreditCard, color: "blue" },
       dispute: { icon: AlertTriangle, color: "red" },
-      payment: { icon: DollarSign, color: "green" },
+      payout: { icon: DollarSign, color: "green" },
       user: { icon: Users, color: "purple" },
       mediator: { icon: Shield, color: "amber" },
     };
-
     return iconMap[type] || { icon: Activity, color: "gray" };
   };
 
-  // Manual refresh handler
-  const handleRefresh = () => {
-    refetch();
-  };
-
-  // Loading state
   if (isLoading && !stats) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -107,11 +93,9 @@ const AdminDashboard = () => {
     );
   }
 
-  // Error state
   if (isError) {
     const errorMessage =
       error?.data?.message || error?.error || "Failed to fetch dashboard data";
-
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center bg-red-50 p-8 rounded-xl max-w-md">
@@ -121,7 +105,7 @@ const AdminDashboard = () => {
           </h3>
           <p className="text-red-700 mb-4">{errorMessage}</p>
           <button
-            onClick={handleRefresh}
+            onClick={refetch}
             className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
           >
             Retry
@@ -131,9 +115,18 @@ const AdminDashboard = () => {
     );
   }
 
+  // Safely extract financial fields with correct API field names
+  const financial = stats?.data?.financial || stats?.financial || {};
+  const overview = stats?.data?.overview || stats?.overview || {};
+  const transactions = stats?.data?.transactions || stats?.transactions || {};
+  const disputes = stats?.data?.disputes || stats?.disputes || {};
+  const users = stats?.data?.users || stats?.users || {};
+  const recentActivity =
+    stats?.data?.recentActivity || stats?.recentActivity || [];
+
   return (
     <div className="space-y-6 p-6">
-      {/* Header Section */}
+      {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 mb-1">
@@ -142,17 +135,11 @@ const AdminDashboard = () => {
           <p className="text-gray-600">
             Real-time overview of MyDoshBox platform
           </p>
-          {lastUpdated && (
-            <p className="text-sm text-gray-500 mt-1">
-              Last updated: {lastUpdated.toLocaleTimeString()}
-            </p>
-          )}
         </div>
 
         <div className="flex items-center space-x-3">
-          {/* Refresh Button */}
           <button
-            onClick={handleRefresh}
+            onClick={refetch}
             disabled={isFetching}
             className="p-2 rounded-lg bg-white border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50"
             title="Refresh data"
@@ -162,7 +149,6 @@ const AdminDashboard = () => {
             />
           </button>
 
-          {/* Time Range Selector */}
           <div className="flex space-x-2 bg-white border border-gray-300 rounded-lg p-1">
             {["today", "week", "month", "year"].map((range) => (
               <button
@@ -184,7 +170,6 @@ const AdminDashboard = () => {
 
       {/* Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Total Transactions */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between mb-4">
             <div className="p-3 rounded-lg bg-blue-50">
@@ -196,7 +181,7 @@ const AdminDashboard = () => {
             </div>
           </div>
           <p className="text-3xl font-bold text-gray-900 mb-1">
-            {stats?.overview?.totalTransactions?.toLocaleString() || 0}
+            {overview.totalTransactions?.toLocaleString() || 0}
           </p>
           <p className="text-sm font-medium text-gray-700 mb-1">
             Total Transactions
@@ -206,20 +191,19 @@ const AdminDashboard = () => {
           </p>
         </div>
 
-        {/* Active Disputes */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between mb-4">
             <div className="p-3 rounded-lg bg-red-50">
               <AlertTriangle className="w-6 h-6 text-red-600" />
             </div>
-            {stats?.overview?.activeDisputes > 0 && (
-              <div className="flex items-center space-x-1 text-red-600">
-                <span className="text-sm font-medium">Needs Attention</span>
-              </div>
+            {overview.activeDisputes > 0 && (
+              <span className="text-sm font-medium text-red-600">
+                Needs Attention
+              </span>
             )}
           </div>
           <p className="text-3xl font-bold text-gray-900 mb-1">
-            {stats?.overview?.activeDisputes || 0}
+            {overview.activeDisputes || 0}
           </p>
           <p className="text-sm font-medium text-gray-700 mb-1">
             Active Disputes
@@ -227,46 +211,42 @@ const AdminDashboard = () => {
           <p className="text-xs text-gray-500">Requiring attention</p>
         </div>
 
-        {/* Pending Payments */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between mb-4">
             <div className="p-3 rounded-lg bg-amber-50">
               <Clock className="w-6 h-6 text-amber-600" />
             </div>
-            {stats?.overview?.pendingPayments > 0 && (
-              <div className="flex items-center space-x-1 text-amber-600">
-                <span className="text-sm font-medium">
-                  {stats?.overview?.pendingPayments}
-                </span>
-              </div>
+            {overview.pendingPayouts > 0 && (
+              <span className="text-sm font-medium text-amber-600">
+                {overview.pendingPayouts}
+              </span>
             )}
           </div>
           <p className="text-3xl font-bold text-gray-900 mb-1">
-            {stats?.overview?.pendingPayments || 0}
+            {overview.pendingPayouts || 0}
           </p>
           <p className="text-sm font-medium text-gray-700 mb-1">
-            Pending Payments
+            Pending Payouts
           </p>
-          <p className="text-xs text-gray-500">Awaiting verification</p>
+          <p className="text-xs text-gray-500">Awaiting processing</p>
         </div>
 
-        {/* Completed Today */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between mb-4">
             <div className="p-3 rounded-lg bg-green-50">
               <CheckCircle className="w-6 h-6 text-green-600" />
             </div>
-            {stats?.overview?.completedToday > 0 && (
+            {overview.completedToday > 0 && (
               <div className="flex items-center space-x-1 text-green-600">
                 <TrendingUp className="w-4 h-4" />
                 <span className="text-sm font-medium">
-                  +{stats?.overview?.completedToday}
+                  +{overview.completedToday}
                 </span>
               </div>
             )}
           </div>
           <p className="text-3xl font-bold text-gray-900 mb-1">
-            {stats?.overview?.completedToday || 0}
+            {overview.completedToday || 0}
           </p>
           <p className="text-sm font-medium text-gray-700 mb-1">
             Completed Today
@@ -297,7 +277,7 @@ const AdminDashboard = () => {
                 </div>
               </div>
               <p className="text-xl font-bold text-gray-900">
-                {formatCurrency(stats?.financial?.totalVolume)}
+                {formatCurrency(financial.totalVolume)}
               </p>
             </div>
 
@@ -314,49 +294,61 @@ const AdminDashboard = () => {
                 </div>
               </div>
               <p className="text-xl font-bold text-gray-900">
-                {formatCurrency(stats?.financial?.commissionEarned)}
+                {formatCurrency(financial.commissionEarned)}
               </p>
             </div>
 
-            <div className="flex items-center justify-between p-4 bg-amber-50 rounded-lg">
+            <div className="flex items-center justify-between p-4 bg-purple-50 rounded-lg">
               <div className="flex items-center space-x-3">
-                <div className="p-2 rounded-lg bg-amber-100">
-                  <Clock className="w-5 h-5 text-amber-600" />
+                <div className="p-2 rounded-lg bg-purple-100">
+                  <CheckCircle className="w-5 h-5 text-purple-600" />
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-700">
-                    Pending Transfers
+                    Revenue Recognized
                   </p>
-                  <p className="text-xs text-gray-500">Awaiting release</p>
+                  <p className="text-xs text-gray-500">Completed commissions</p>
                 </div>
               </div>
               <p className="text-xl font-bold text-gray-900">
-                {formatCurrency(stats?.financial?.pendingTransfers)}
+                {formatCurrency(financial.revenueRecognized)}
               </p>
             </div>
 
-            <div className="flex items-center justify-between p-4 bg-emerald-50 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 rounded-lg bg-emerald-100">
-                  <CheckCircle className="w-5 h-5 text-emerald-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-700">
-                    Released Today
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Transferred to vendors
-                  </p>
-                </div>
+            {/* FIX: use correct field names from API */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="p-3 bg-amber-50 rounded-lg text-center">
+                <Wallet className="w-5 h-5 text-amber-600 mx-auto mb-1" />
+                <p className="text-xs font-medium text-gray-700 mb-1">
+                  Pending
+                </p>
+                <p className="text-sm font-bold text-gray-900">
+                  {formatCurrency(financial.pendingPayoutsAmount)}
+                </p>
               </div>
-              <p className="text-xl font-bold text-gray-900">
-                {formatCurrency(stats?.financial?.releasedToday)}
-              </p>
+
+              <div className="p-3 bg-emerald-50 rounded-lg text-center">
+                <CheckCircle className="w-5 h-5 text-emerald-600 mx-auto mb-1" />
+                <p className="text-xs font-medium text-gray-700 mb-1">
+                  Completed
+                </p>
+                <p className="text-sm font-bold text-gray-900">
+                  {formatCurrency(financial.completedPayoutsAmount)}
+                </p>
+              </div>
+
+              <div className="p-3 bg-red-50 rounded-lg text-center">
+                <XCircle className="w-5 h-5 text-red-600 mx-auto mb-1" />
+                <p className="text-xs font-medium text-gray-700 mb-1">Failed</p>
+                <p className="text-sm font-bold text-gray-900">
+                  {financial.failedPayoutsCount || 0}
+                </p>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Transaction Status Distribution */}
+        {/* Transaction Status */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
             <Package className="w-5 h-5 mr-2 text-purple-600" />
@@ -365,37 +357,43 @@ const AdminDashboard = () => {
           <div className="space-y-3">
             {[
               {
-                label: "In Progress",
-                value: stats?.transactions?.inProgress || 0,
+                label: "Processing",
+                value: transactions.processing || 0,
                 color: "bg-blue-500",
                 bgColor: "bg-blue-50",
               },
               {
                 label: "Awaiting Payment",
-                value: stats?.transactions?.awaitingPayment || 0,
+                value: transactions.awaitingPayment || 0,
                 color: "bg-amber-500",
                 bgColor: "bg-amber-50",
               },
               {
+                label: "Payment Verified",
+                value: transactions.paymentVerified || 0,
+                color: "bg-cyan-500",
+                bgColor: "bg-cyan-50",
+              },
+              {
                 label: "In Transit",
-                value: stats?.transactions?.inTransit || 0,
+                value: transactions.inTransit || 0,
                 color: "bg-purple-500",
                 bgColor: "bg-purple-50",
               },
               {
                 label: "Completed",
-                value: stats?.transactions?.completed || 0,
+                value: transactions.completed || 0,
                 color: "bg-emerald-500",
                 bgColor: "bg-emerald-50",
               },
               {
                 label: "Cancelled",
-                value: stats?.transactions?.cancelled || 0,
+                value: transactions.cancelled || 0,
                 color: "bg-red-500",
                 bgColor: "bg-red-50",
               },
             ].map((item, index) => {
-              const total = Object.values(stats?.transactions || {}).reduce(
+              const total = Object.values(transactions).reduce(
                 (a, b) => (a || 0) + (b || 0),
                 0,
               );
@@ -437,7 +435,7 @@ const AdminDashboard = () => {
             <div className="text-center p-5 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
               <Users className="w-8 h-8 text-blue-600 mx-auto mb-2" />
               <p className="text-3xl font-bold text-gray-900">
-                {stats?.users?.total?.toLocaleString() || 0}
+                {users.total?.toLocaleString() || 0}
               </p>
               <p className="text-sm text-gray-600 mt-1">Total Users</p>
             </div>
@@ -445,7 +443,7 @@ const AdminDashboard = () => {
             <div className="text-center p-5 bg-gradient-to-br from-green-50 to-green-100 rounded-lg border border-green-200">
               <Shield className="w-8 h-8 text-green-600 mx-auto mb-2" />
               <p className="text-3xl font-bold text-gray-900">
-                {stats?.users?.activeMediators?.toLocaleString() || 0}
+                {users.activeMediators?.toLocaleString() || 0}
               </p>
               <p className="text-sm text-gray-600 mt-1">Active Mediators</p>
             </div>
@@ -453,7 +451,7 @@ const AdminDashboard = () => {
             <div className="text-center p-5 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg border border-purple-200">
               <Users className="w-8 h-8 text-purple-600 mx-auto mb-2" />
               <p className="text-3xl font-bold text-gray-900">
-                {stats?.users?.individual?.toLocaleString() || 0}
+                {users.individual?.toLocaleString() || 0}
               </p>
               <p className="text-sm text-gray-600 mt-1">Individual Users</p>
             </div>
@@ -461,17 +459,17 @@ const AdminDashboard = () => {
             <div className="text-center p-5 bg-gradient-to-br from-amber-50 to-amber-100 rounded-lg border border-amber-200">
               <Users className="w-8 h-8 text-amber-600 mx-auto mb-2" />
               <p className="text-3xl font-bold text-gray-900">
-                {stats?.users?.organizations?.toLocaleString() || 0}
+                {users.organizations?.toLocaleString() || 0}
               </p>
               <p className="text-sm text-gray-600 mt-1">Organizations</p>
             </div>
           </div>
 
-          {stats?.users?.newThisMonth > 0 && (
+          {users.newThisMonth > 0 && (
             <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
               <p className="text-sm text-center">
                 <span className="font-semibold text-blue-900">
-                  {stats.users.newThisMonth}
+                  {users.newThisMonth}
                 </span>
                 <span className="text-blue-700"> new users this month</span>
               </p>
@@ -479,7 +477,7 @@ const AdminDashboard = () => {
           )}
         </div>
 
-        {/* Dispute Resolution Stats */}
+        {/* Dispute Resolution */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
             <AlertTriangle className="w-5 h-5 mr-2 text-red-600" />
@@ -494,7 +492,7 @@ const AdminDashboard = () => {
                 <p className="text-xs text-gray-500">Currently open</p>
               </div>
               <span className="text-2xl font-bold text-red-600">
-                {stats?.disputes?.active || 0}
+                {disputes.active || 0}
               </span>
             </div>
 
@@ -506,7 +504,7 @@ const AdminDashboard = () => {
                 <p className="text-xs text-gray-500">Successfully closed</p>
               </div>
               <span className="text-2xl font-bold text-emerald-600">
-                {stats?.disputes?.resolved || 0}
+                {disputes.resolved || 0}
               </span>
             </div>
 
@@ -518,7 +516,7 @@ const AdminDashboard = () => {
                 <p className="text-xs text-gray-500">Under mediation</p>
               </div>
               <span className="text-2xl font-bold text-amber-600">
-                {stats?.disputes?.escalated || 0}
+                {disputes.escalated || 0}
               </span>
             </div>
 
@@ -528,16 +526,16 @@ const AdminDashboard = () => {
                   Resolution Rate
                 </p>
                 <p className="text-2xl font-bold text-blue-600">
-                  {stats?.disputes?.resolutionRate || "0%"}
+                  {disputes.resolutionRate || "0%"}
                 </p>
               </div>
 
               <div className="p-4 bg-purple-50 rounded-lg text-center">
                 <p className="text-sm font-medium text-gray-700 mb-1">
-                  Avg. Resolution Time
+                  Avg. Time
                 </p>
                 <p className="text-2xl font-bold text-purple-600">
-                  {stats?.disputes?.avgResolutionTime || "0 days"}
+                  {formatHoursAsDays(disputes.avgResolutionTimeHours)}
                 </p>
               </div>
             </div>
@@ -558,12 +556,9 @@ const AdminDashboard = () => {
         </div>
 
         <div className="divide-y divide-gray-200 max-h-96 overflow-y-auto">
-          {stats?.recentActivity && stats.recentActivity.length > 0 ? (
-            stats.recentActivity.map((activity) => {
-              const { icon: Icon, color } = getActivityIcon(
-                activity.type,
-                activity.action,
-              );
+          {recentActivity.length > 0 ? (
+            recentActivity.map((activity) => {
+              const { icon: Icon, color } = getActivityIcon(activity.type);
 
               return (
                 <div
@@ -599,12 +594,17 @@ const AdminDashboard = () => {
                               ID: {activity.transaction_id.slice(0, 8)}...
                             </p>
                           )}
+                          {activity.vendor_name && (
+                            <p className="text-xs text-gray-500">
+                              {activity.vendor_name}
+                            </p>
+                          )}
                         </div>
                       </div>
                     </div>
 
                     <span className="text-sm text-gray-500 whitespace-nowrap ml-4">
-                      {formatTimeAgo(activity.time || activity.timestamp)}
+                      {activity.time}
                     </span>
                   </div>
                 </div>

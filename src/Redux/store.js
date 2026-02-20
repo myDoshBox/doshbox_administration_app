@@ -8,7 +8,7 @@ import mediatorReducer from "./Slice/MediatorSlice/mediatorSlice";
 import mediatorDisputesReducer from "./Slice/MediatorSlice/mediatorDisputeSlice";
 import { adminStatsApiSlice } from "../Redux/Slice/AdminStatSlice/Adminstatsapislice";
 import { mediatorApiSlice } from "./Slice/AdminMeditor/mediatorApiSlice";
-
+import { adminTransactionsApiSlice } from "./Slice/AdminTransactionSlice/adminTransactionsApiSlice";
 // RTK Query
 import { adminAPISlice } from "./Slice/AuthSlice/AdminApiSlice";
 
@@ -27,6 +27,7 @@ const rootReducer = combineReducers({
   [adminAPISlice.reducerPath]: adminAPISlice.reducer,
   [adminStatsApiSlice.reducerPath]: adminStatsApiSlice.reducer,
   [mediatorApiSlice.reducerPath]: mediatorApiSlice.reducer,
+  [adminTransactionsApiSlice.reducerPath]: adminTransactionsApiSlice.reducer,
 });
 
 // Persisted reducer
@@ -43,6 +44,7 @@ export const store = configureStore({
     }).concat(
       adminAPISlice.middleware,
       adminStatsApiSlice.middleware,
+      adminTransactionsApiSlice.middleware,
       mediatorApiSlice.middleware,
     ),
   devTools: true,
