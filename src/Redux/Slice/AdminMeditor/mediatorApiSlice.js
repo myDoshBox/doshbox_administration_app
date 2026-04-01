@@ -30,7 +30,7 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
 export const mediatorApiSlice = createApi({
   reducerPath: "mediatorApi",
   baseQuery: baseQueryWithReauth,
-  tagTypes: ["Mediator"],
+  tagTypes: ["Mediator", "MediatorDisputes"],
   endpoints: (builder) => ({
     // Create new mediator
     createMediator: builder.mutation({
@@ -64,6 +64,30 @@ export const mediatorApiSlice = createApi({
       invalidatesTags: ["Mediator"],
     }),
 
+    // Get dispute stats for a specific mediator
+    getMediatorDisputeStats: builder.query({
+      query: (mediatorId) => `/${mediatorId}/stats`,
+      providesTags: (result, error, mediatorId) => [
+        { type: "MediatorDisputes", id: mediatorId },
+      ],
+    }),
+
+    // Get all disputes for a specific mediator with pagination
+    getMediatorDisputes: builder.query({
+      query: ({
+        mediatorId,
+        page = 1,
+        limit = 10,
+        status = "all",
+        stage = "all",
+        search = "",
+      }) =>
+        `/${mediatorId}/disputes?page=${page}&limit=${limit}&status=${status}&stage=${stage}&search=${search}`,
+      providesTags: (result, error, { mediatorId }) => [
+        { type: "MediatorDisputes", id: mediatorId },
+      ],
+    }),
+
     // Delete mediator
     deleteMediator: builder.mutation({
       query: (mediatorId) => ({
@@ -82,4 +106,6 @@ export const {
   useUpdateMediatorMutation,
   useDeleteMediatorMutation,
   useLazyGetMediatorsQuery,
+  useGetMediatorDisputeStatsQuery,
+  useGetMediatorDisputesQuery,
 } = mediatorApiSlice;
